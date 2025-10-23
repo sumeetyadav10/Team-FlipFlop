@@ -46,9 +46,17 @@ export type MessageType =
   | 'CAPTURE_PAGE'
   | 'AUTH_SUCCESS'
   | 'AUTH_ERROR'
-  | 'GET_STATUS';
+  | 'GET_STATUS'
+  | 'AUTH_UPDATED'
+  | 'VERIFY_SESSION'
+  | 'SEND_TRANSCRIPT'
+  | 'END_MEETING';
 
 export interface Message {
   type: MessageType;
   payload?: any;
+  chunk?: TranscriptChunk;
+  meetingId?: string;
+  summary?: string;
+  transcripts?: string[];
 }

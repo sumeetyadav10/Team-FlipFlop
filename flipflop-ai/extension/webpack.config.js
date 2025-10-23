@@ -5,7 +5,7 @@ module.exports = {
   devtool: process.env.NODE_ENV === 'production' ? false : 'inline-source-map',
   entry: {
     background: './src/background/service-worker.ts',
-    'content-meet': './src/content/meet-transcript.ts',
+    'content-meet': './src/content/meet-final.ts',
     'content-universal': './src/content/universal.ts',
     popup: './src/popup/popup.ts',
   },

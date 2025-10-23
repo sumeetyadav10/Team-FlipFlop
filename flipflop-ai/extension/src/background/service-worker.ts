@@ -43,6 +43,53 @@ async function handleMessage(message: Message, sender: chrome.runtime.MessageSen
         });
       }
       break;
+
+    case 'VERIFY_SESSION':
+      // Verify session for content scripts
+      try {
+        const authenticated = await api.verifySession();
+        return { authenticated };
+      } catch (error) {
+        console.error('Session verification failed:', error);
+        return { authenticated: false };
+      }
+
+    case 'SEND_TRANSCRIPT':
+      // Send transcript to backend
+      try {
+        if (!message.chunk || !message.meetingId) {
+          throw new Error('Missing chunk or meetingId');
+        }
+        await api.sendTranscript(message.chunk, message.meetingId);
+        return { success: true };
+      } catch (error) {
+        console.error('Failed to send transcript:', error);
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      }
+
+    case 'END_MEETING':
+      // End meeting and save summary
+      try {
+        const { meetingId, summary, transcripts } = message;
+        if (!meetingId) {
+          throw new Error('Missing meetingId');
+        }
+        
+        console.log(`[Background] Ending meeting ${meetingId} with ${transcripts?.length || 0} transcripts`);
+        
+        // Call the endMeeting API
+        await api.endMeeting(
+          meetingId,
+          summary || 'Meeting ended',
+          [], // decisions (empty for now)
+          []  // action items (empty for now)
+        );
+        
+        return { success: true };
+      } catch (error) {
+        console.error('Failed to end meeting:', error);
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      }
   }
 }
 
