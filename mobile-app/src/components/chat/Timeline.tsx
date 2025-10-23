@@ -59,7 +59,7 @@ const TimelineItem: React.FC<TimelineItemProps> = ({ event, isLast, onPress }) =
               {event.title}
             </Text>
             <Text size="xs" color={theme.colors.text.secondary}>
-              {event.timestamp.toLocaleDateString()}
+              {event.timestamp ? new Date(event.timestamp).toLocaleDateString() : 'No date'}
             </Text>
           </Row>
           
@@ -70,7 +70,7 @@ const TimelineItem: React.FC<TimelineItemProps> = ({ event, isLast, onPress }) =
           {event.participants.length > 0 && (
             <Row gap={theme.spacing.xs} style={{ flexWrap: 'wrap' }}>
               <Text size="xs" color={theme.colors.text.secondary}>Participants:</Text>
-              {event.participants.slice(0, 3).map((participant: string, index: number) => (
+              {event.participants.slice(0, 3).map((participant, index) => (
                 <View key={index} style={styles.participantTag}>
                   <Text size="xs" color={theme.colors.primary}>
                     {participant}
@@ -110,7 +110,10 @@ const TimelineItem: React.FC<TimelineItemProps> = ({ event, isLast, onPress }) =
   }
 
   // Sort events by timestamp (most recent first)
-  const sortedEvents = [...events].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+  const sortedEvents = [...events].sort((a, b) => {
+    if (!a.timestamp || !b.timestamp) return 0;
+    return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+  });
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>

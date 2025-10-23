@@ -11,35 +11,34 @@ import { theme } from '../../utils/theme';
 
 export const ChatScreen = () => {
   const { team } = useAuthStore();
+  const chatStore = useChatStore();
+  
   const { 
     messages, 
-    isLoading, 
+    isLoading,
     currentQuery, 
     sendMessage, 
     setCurrentQuery, 
     loadMoreMessages,
-    setCurrentTeam,
-    timelineEvents,
-    showTimeline,
-    toggleTimeline,
-    loadTimelineEvents
-  } = useChatStore();
+    setCurrentTeam
+  } = chatStore;
+  
+  // Use fallback values for missing properties
+  const timelineEvents = chatStore.timelineEvents || [];
+  const showTimeline = chatStore.showTimeline || false;
+  const toggleTimeline = chatStore.toggleTimeline || (() => console.warn('toggleTimeline not available'));
+  const loadTimelineEvents = chatStore.loadTimelineEvents || (() => console.warn('loadTimelineEvents not available'));
   
   const flatListRef = useRef<FlatList>(null);
 
   // Set current team when component mounts
   useEffect(() => {
-    console.log('🏢 ChatScreen: Team effect triggered, team:', team);
     if (team?.id) {
-      console.log('✅ ChatScreen: Setting current team:', team.id);
       setCurrentTeam(team.id);
-      if (typeof loadTimelineEvents === 'function') {
+      // Only call loadTimelineEvents if it exists
+      if (loadTimelineEvents && typeof loadTimelineEvents === 'function') {
         loadTimelineEvents(team.id);
-      } else {
-        console.warn('⚠️ ChatScreen: loadTimelineEvents is undefined');
       }
-    } else {
-      console.log('❌ ChatScreen: No team ID available');
     }
   }, [team?.id, setCurrentTeam, loadTimelineEvents]);
 
@@ -51,16 +50,8 @@ export const ChatScreen = () => {
   }, [messages]);
 
   const handleSendMessage = async (text: string) => {
-    console.log('🚀 ChatScreen handleSendMessage called with:', text);
-    console.log('🔍 Team ID:', team?.id);
-    
     if (team?.id && text.trim().length > 0) {
-      console.log('✅ Sending message to chat store');
       await sendMessage(text, team.id);
-    } else {
-      console.log('❌ Cannot send message - missing team ID or empty text');
-      console.log('Team:', team);
-      console.log('Text length:', text.trim().length);
     }
   };
 
@@ -132,10 +123,8 @@ export const ChatScreen = () => {
           <Row gap={theme.spacing.sm} style={{ alignItems: 'center' }}>
             <TouchableOpacity 
               onPress={() => {
-                if (typeof toggleTimeline === 'function') {
+                if (toggleTimeline && typeof toggleTimeline === 'function') {
                   toggleTimeline();
-                } else {
-                  console.warn('⚠️ ChatScreen: toggleTimeline is undefined');
                 }
               }}
               style={{
@@ -163,9 +152,10 @@ export const ChatScreen = () => {
           <Timeline 
             events={timelineEvents} 
             onEventPress={(event) => {
-              console.log('Timeline event pressed:', event.title);
               // Switch back to chat view when timeline event is pressed
-              toggleTimeline();
+              if (toggleTimeline && typeof toggleTimeline === 'function') {
+                toggleTimeline();
+              }
             }}
           />
         ) : (
@@ -201,10 +191,7 @@ export const ChatScreen = () => {
             {/* Chat Input */}
             <ChatInput
               value={currentQuery}
-              onChangeText={(text) => {
-                console.log('📝 ChatScreen received text change:', text);
-                setCurrentQuery(text);
-              }}
+              onChangeText={setCurrentQuery}
               onSendMessage={handleSendMessage}
               disabled={isLoading || !team?.id}
             />

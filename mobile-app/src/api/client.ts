@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { QueryContext, Message, Source, User, Team, TeamMember, AuthCredentials, LoginResponse } from '../types';
+import { QueryContext, Message, Source, User, Team, TeamMember, AuthCredentials, LoginResponse, MessageAction } from '../types';
 import { ENV_CONFIG, API_BASE_URL, getAPIHeaders, isUsingRealAPI } from '../config/env';
 import { supabase, supabaseHelpers } from '../config/supabase';
 
@@ -15,6 +15,7 @@ export interface QueryResponse {
   sources: Source[];
   suggestions: string[];
   messageId: string;
+  actionButtons?: MessageAction[];
 }
 
 export interface FeedbackRequest {
@@ -750,53 +751,167 @@ class APIClient {
       "Find related decisions",
     ];
 
+    // Generate smart action buttons based on question content
+    const generateActionButtons = (query: string, sources: Source[]): MessageAction[] => {
+      const actions: MessageAction[] = [];
+      const lowerQuery = query.toLowerCase();
+
+      // Meeting/Schedule related
+      if (lowerQuery.includes('meeting') || lowerQuery.includes('schedule') || lowerQuery.includes('discuss')) {
+        actions.push({
+          id: 'schedule',
+          type: 'calendar',
+          label: 'Schedule',
+          icon: '📅'
+        });
+        actions.push({
+          id: 'meet',
+          type: 'meet',
+          label: 'Start Call',
+          icon: '🎥'
+        });
+      }
+
+      // Documentation related
+      if (lowerQuery.includes('document') || lowerQuery.includes('decision') || lowerQuery.includes('log')) {
+        actions.push({
+          id: 'notion',
+          type: 'notion',
+          label: 'View in Notion',
+          icon: '📝'
+        });
+      }
+
+      // Team/Communication related
+      if (lowerQuery.includes('team') || lowerQuery.includes('channel') || lowerQuery.includes('slack')) {
+        actions.push({
+          id: 'slack',
+          type: 'slack',
+          label: 'Open in Slack',
+          icon: '💬'
+        });
+      }
+
+      // Based on sources, add relevant buttons
+      sources.forEach(source => {
+        switch (source.type) {
+          case 'slack':
+            if (!actions.find(a => a.type === 'slack')) {
+              actions.push({
+                id: 'slack-source',
+                type: 'slack',
+                label: 'Join Channel',
+                icon: '💬'
+              });
+            }
+            break;
+          case 'notion':
+            if (!actions.find(a => a.type === 'notion')) {
+              actions.push({
+                id: 'notion-source',
+                type: 'notion',
+                label: 'Open Doc',
+                icon: '📝'
+              });
+            }
+            break;
+          case 'email':
+            actions.push({
+              id: 'email-source',
+              type: 'email',
+              label: 'Reply',
+              icon: '📧'
+            });
+            break;
+        }
+      });
+
+      // Always add search for more and share
+      actions.push({
+        id: 'search',
+        type: 'search',
+        label: 'Search More',
+        icon: '🔍'
+      });
+
+      return actions.slice(0, 4); // Limit to 4 buttons
+    };
+
     // Check for follow-up questions
     if (context?.conversationId && question.toLowerCase().includes("full conversation")) {
+      const actionButtons = generateActionButtons(question, sources);
       return {
         answer: "Here is the full conversation log from the #engineering channel regarding the payment gateway decision. It includes messages from Sarah, Mike, and Alex.",
         sources: this.getMockSources(),
         suggestions: ["Summarize the key points", "What was Alex's main concern?", "Who has expertise in payments?"],
         messageId: 'msg_' + Date.now(),
+        actionButtons,
       };
     }
 
     // Enhanced expertise-based responses
     if (question.toLowerCase().includes('who') && (question.toLowerCase().includes('expert') || question.toLowerCase().includes('knows'))) {
+      const actionButtons: MessageAction[] = [
+        { id: 'slack-contact', type: 'slack', label: 'Message Team', icon: '💬' },
+        { id: 'calendar', type: 'calendar', label: 'Book Meeting', icon: '📅' },
+        { id: 'search', type: 'search', label: 'Find More', icon: '🔍' }
+      ];
+      
       return {
         answer: "Based on team activity and contributions, here are the subject matter experts: **Sarah Johnson** - Payment systems, API integrations, security. **Mike Chen** - Database architecture, performance optimization. **Alex Rivera** - Frontend development, React, UI/UX.",
         sources: [sources[0]], 
         suggestions: ["Contact Sarah about payments", "Ask Mike about database design", "Get Alex's input on UI"],
         messageId: 'msg_' + Date.now(),
+        actionButtons,
       };
     }
 
     if (question.toLowerCase().includes('payment') || question.toLowerCase().includes('gateway')) {
+      const actionButtons: MessageAction[] = [
+        { id: 'notion-doc', type: 'notion', label: 'Decision Log', icon: '📝' },
+        { id: 'slack-channel', type: 'slack', label: 'Engineering', icon: '💬' },
+        { id: 'meet-sarah', type: 'meet', label: 'Call Sarah', icon: '🎥' },
+        { id: 'search', type: 'search', label: 'More Info', icon: '🔍' }
+      ];
+      
       return {
         answer: "Based on Monday's meeting, the team decided to use Stripe for payment processing because of its developer-friendly API and robust documentation. The decision was made after comparing several alternatives including PayPal and Square. **Sarah Johnson** led this evaluation and has become our payment systems expert.",
         sources: sources,
         suggestions: [...suggestions, "Who has expertise in payments?"],
         messageId: 'msg_' + Date.now(),
+        actionButtons,
       };
     } else if (question.toLowerCase().includes('database') || question.toLowerCase().includes('db')) {
+      const actionButtons: MessageAction[] = [
+        { id: 'slack-mike', type: 'slack', label: 'Ask Mike', icon: '💬' },
+        { id: 'calendar-db', type: 'calendar', label: 'DB Review', icon: '📅' },
+        { id: 'notion-arch', type: 'notion', label: 'Architecture', icon: '📝' }
+      ];
+      
       return {
         answer: "The team is currently evaluating PostgreSQL and MongoDB for the new project. **Mike Chen** recommended PostgreSQL for its ACID compliance and mature ecosystem. He has extensive experience with database architecture.",
         sources: [sources[0]],
         suggestions: [...suggestions, "Ask Mike about database performance"],
         messageId: 'msg_' + Date.now(),
+        actionButtons,
       };
     } else if (question.toLowerCase().includes('tools') && question.toLowerCase().includes('reject')) {
+      const actionButtons = generateActionButtons(question, [sources[1]]);
       return {
         answer: "The team rejected several tools during the evaluation process including Jenkins (in favor of GitHub Actions), MongoDB (chose PostgreSQL instead), and Vue.js (decided on React). These decisions were made collaboratively with input from **Sarah** (DevOps), **Mike** (Backend), and **Alex** (Frontend).",
         sources: [sources[1]],
         suggestions: [...suggestions, "Who decided on the frontend framework?"],
         messageId: 'msg_' + Date.now(),
+        actionButtons,
       };
     } else {
+      const actionButtons = generateActionButtons(question, sources.slice(0, 2));
       return {
         answer: `I found some information related to "${question}". Based on recent team discussions and documentation, here's what I can tell you about this topic.`,
         sources: sources.slice(0, 2),
         suggestions: suggestions,
         messageId: 'msg_' + Date.now(),
+        actionButtons,
       };
     }
   }

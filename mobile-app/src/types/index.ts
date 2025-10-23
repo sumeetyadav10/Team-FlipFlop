@@ -1,7 +1,8 @@
-import { User as SupabaseUser } from '@supabase/supabase-js';
-
-export interface User extends SupabaseUser {
-  // You can add any app-specific user properties here
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  avatar?: string;
   teams: Team[];
 }
 
@@ -19,6 +20,8 @@ export interface TeamMember {
   email: string;
   role: 'admin' | 'member';
   avatar?: string;
+  expertise?: string[];
+  lastActive?: Date;
 }
 
 export interface TeamSettings {
@@ -28,13 +31,22 @@ export interface TeamSettings {
 
 export interface Message {
   id: string;
-  user_id: string;
+  type: 'user' | 'assistant';
   content: string;
-  created_at: string;
-  sender_name?: string;
+  timestamp: Date;
   sources?: Source[];
   suggestions?: string[];
   isLoading?: boolean;
+  actionButtons?: MessageAction[];
+}
+
+export interface MessageAction {
+  id: string;
+  type: 'notion' | 'slack' | 'calendar' | 'meet' | 'email' | 'document' | 'search' | 'share';
+  label: string;
+  icon: string;
+  url?: string;
+  action?: () => void;
 }
 
 export interface Source {
@@ -51,7 +63,6 @@ export interface Source {
 export interface QueryContext {
   teamId: string;
   conversationId?: string;
-  userId?: string;
   timeframe?: {
     start: Date;
     end: Date;
@@ -104,12 +115,6 @@ export interface LoginResponse {
 }
 
 // Navigation types
-export type AppStackParamList = {
-  Auth: undefined;
-  Main: undefined;
-  Chat: { teamId: string; teamName: string };
-};
-
 export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
@@ -122,7 +127,7 @@ export type AuthStackParamList = {
 };
 
 export type MainTabParamList = {
-  Home: undefined;
+  Chat: undefined;
   Search: undefined;
   Profile: undefined;
 };
