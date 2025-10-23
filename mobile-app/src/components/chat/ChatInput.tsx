@@ -1,7 +1,8 @@
 import React from 'react';
-import { TouchableOpacity, TextInput, View, StyleSheet } from 'react-native';
-import { Row, Text } from '../common/Styled';
+import { TouchableOpacity, TextInput, View, StyleSheet, ActivityIndicator } from 'react-native';
+import { Row } from '../common/Styled';
 import { theme } from '../../utils/theme';
+import { Feather } from '@expo/vector-icons';
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
@@ -26,6 +27,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   return (
     <View style={styles.container}>
       <Row style={styles.row}>
+        {/* Attachment Button */}
+        <TouchableOpacity style={styles.iconButton}>
+          <Feather name="paperclip" size={22} color={theme.colors.text.secondary} />
+        </TouchableOpacity>
+
         {/* Text Input */}
         <TextInput
           style={styles.input}
@@ -43,10 +49,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         {/* Send Button */}
         <TouchableOpacity
           onPress={handleSend}
-          style={[styles.sendButton, { opacity: (!value.trim() || disabled) ? 0.5 : 1 }]}
+          style={[styles.sendButton, { backgroundColor: (!value.trim() || disabled) ? theme.colors.surface : theme.colors.primary }]}
           disabled={!value.trim() || disabled}
         >
-          <Text size="lg" color={theme.colors.text.inverse}>➤</Text>
+          {disabled && value.trim() ? (
+            <ActivityIndicator size="small" color={theme.colors.primary} />
+          ) : (
+            <Feather name="arrow-up" size={22} color={theme.colors.text.inverse} />
+          )}
         </TouchableOpacity>
       </Row>
     </View>
@@ -55,39 +65,35 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: theme.spacing.md,
+    paddingHorizontal: theme.spacing.sm,
     paddingVertical: theme.spacing.sm,
-    backgroundColor: 'transparent', // Make input container transparent
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
   },
   row: {
-    alignItems: 'center',
+    alignItems: 'flex-end',
   },
   input: {
     flex: 1,
-    backgroundColor: theme.colors.surface, // Darker input background
+    backgroundColor: theme.colors.background,
     borderRadius: 20,
     paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
+    paddingTop: theme.spacing.sm,
+    paddingBottom: theme.spacing.sm,
     fontSize: theme.fonts.sizes.md,
     color: theme.colors.text.primary,
     maxHeight: 120,
-    marginRight: theme.spacing.sm,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
+  iconButton: {
+    padding: theme.spacing.sm,
+  },
   sendButton: {
-    backgroundColor: theme.colors.primary,
     borderRadius: 20,
     width: 40,
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: theme.colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 10,
-    elevation: 10,
+    marginLeft: theme.spacing.sm,
   },
 });

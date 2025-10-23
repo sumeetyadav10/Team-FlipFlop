@@ -1,167 +1,108 @@
 import React from 'react';
-import { TouchableOpacity, View, StyleSheet } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { Text, Column, Row } from '../common/Styled';
+import { View, StyleSheet, Text, Image } from 'react-native';
+import { Message } from '../../stores/chatStore';
+import { useAuthStore } from '../../stores/authStore';
 import { theme } from '../../utils/theme';
-import { Message } from '../../types';
-import { ChatStackParamList } from '../../types';
-
-type NavigationProp = StackNavigationProp<ChatStackParamList>;
+import { Feather } from '@expo/vector-icons';
 
 interface MessageBubbleProps {
   message: Message;
 }
 
 export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
-  const navigation = useNavigation<NavigationProp>();
-  const isUser = message.type === 'user';
+  const { user } = useAuthStore.getState();
+  const isUserMessage = message.user_id === user?.id;
 
-  const handleSourcePress = (sourceId: string) => {
-    navigation.navigate('SourceDetail', { sourceId });
+  const getInitials = (name: string | undefined) => {
+    if (!name) return 'U';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
 
+  const senderName = isUserMessage ? 'You' : message.sender_name || 'FlipFlop';
+  const avatarText = getInitials(isUserMessage ? user?.user_metadata.full_name : message.sender_name);
+
   return (
-    <View style={[
-      styles.messageContainer,
-      isUser ? styles.userMessageContainer : styles.assistantMessageContainer
-    ]}>
-      <View style={[
-        styles.bubble,
-        isUser ? styles.userBubble : styles.assistantBubble
-      ]}>
-        <Text color={isUser ? theme.colors.text.inverse : theme.colors.text.primary}>
+    <View style={[styles.messageRow, isUserMessage ? styles.userMessageRow : styles.botMessageRow]}>
+      {!isUserMessage && (
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>{avatarText}</Text>
+        </View>
+      )}
+      <View
+        style={[
+          styles.messageBubble,
+          isUserMessage ? styles.userMessageBubble : styles.botMessageBubble,
+        ]}
+      >
+        <Text style={styles.senderName}>{senderName}</Text>
+        <Text style={isUserMessage ? styles.userMessageText : styles.botMessageText}>
           {message.content}
         </Text>
-
-        {message.sources && message.sources.length > 0 && (
-          <TouchableOpacity
-            onPress={() => handleSourcePress(message.sources![0].id)}
-            style={styles.sourceContainer}
-          >
-            <Text
-              size="sm"
-              color={isUser ? theme.colors.text.inverse : theme.colors.text.secondary}
-              style={styles.sourceText}
-            >
-              📎 {message.sources.length} source{message.sources.length > 1 ? 's' : ''}
-            </Text>
-          </TouchableOpacity>
-        )}
-        
-        <Text
-          size="xs"
-          color={isUser ? theme.colors.text.inverse : theme.colors.text.secondary}
-          style={styles.timestamp}
-        >
-          {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        <Text style={styles.timestamp}>
+          {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </Text>
-      </View>
-    </View>
-  );
-};
-
-interface SuggestionsProps {
-  suggestions: string[];
-  onSuggestionPress: (suggestion: string) => void;
-}
-
-export const Suggestions: React.FC<SuggestionsProps> = ({ suggestions, onSuggestionPress }) => {
-  if (!suggestions || suggestions.length === 0) return null;
-
-  return (
-    <Column gap={theme.spacing.xs} style={styles.suggestionsContainer}>
-      <Text size="sm" color={theme.colors.text.secondary} style={styles.suggestionTitle}>
-        Suggestions:
-      </Text>
-      {suggestions.slice(0, 3).map((suggestion, index) => (
-        <TouchableOpacity
-          key={index}
-          onPress={() => onSuggestionPress(suggestion)}
-          style={styles.suggestionBubble}
-        >
-          <Text size="sm" color={theme.colors.primary}>
-            {suggestion}
-          </Text>
-        </TouchableOpacity>
-      ))}
-    </Column>
-  );
-};
-
-export const TypingIndicator: React.FC = () => {
-  return (
-    <View style={[styles.messageContainer, styles.assistantMessageContainer]}>
-      <View style={[styles.bubble, styles.assistantBubble, styles.typingBubble]}>
-        <Row gap={theme.spacing.xs} style={{ alignItems: 'center' }}>
-          <Text color={theme.colors.text.secondary}>💭</Text>
-          <Text color={theme.colors.text.secondary} style={{ fontStyle: 'italic' }}>
-            FlipFlop is thinking...
-          </Text>
-        </Row>
       </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  messageContainer: {
-    marginVertical: theme.spacing.xs,
+  messageRow: {
+    flexDirection: 'row',
+    marginVertical: theme.spacing.sm,
     maxWidth: '85%',
   },
-  userMessageContainer: {
+  userMessageRow: {
     alignSelf: 'flex-end',
+    marginLeft: '15%',
   },
-  assistantMessageContainer: {
+  botMessageRow: {
     alignSelf: 'flex-start',
+    marginRight: '15%',
   },
-  bubble: {
-    padding: theme.spacing.md,
-    borderRadius: theme.borderRadius.lg,
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: theme.spacing.sm,
   },
-  userBubble: {
-    backgroundColor: theme.colors.primary, // Vibrant Blue for user
-    borderBottomRightRadius: theme.borderRadius.sm,
-    shadowColor: theme.colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.5,
-    shadowRadius: 5,
-    elevation: 5,
+  avatarText: {
+    color: theme.colors.text.inverse,
+    fontWeight: 'bold',
   },
-  assistantBubble: {
-    backgroundColor: theme.colors.surface,
-    borderBottomLeftRadius: theme.borderRadius.sm,
-  },
-  sourceContainer: {
-    marginTop: theme.spacing.sm,
-  },
-  sourceText: {
-    fontStyle: 'italic',
-    opacity: 0.8,
-  },
-  timestamp: {
-    marginTop: theme.spacing.xs,
-    opacity: 0.7,
-    alignSelf: 'flex-end',
-  },
-  suggestionsContainer: {
-    marginTop: theme.spacing.sm,
-    alignSelf: 'flex-start',
-    marginLeft: theme.spacing.md,
-  },
-  suggestionTitle: {
-    fontStyle: 'italic',
-    marginBottom: theme.spacing.xs,
-  },
-  suggestionBubble: {
+  messageBubble: {
     paddingVertical: theme.spacing.sm,
     paddingHorizontal: theme.spacing.md,
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderRadius: 20,
   },
-  typingBubble: {
-    paddingVertical: theme.spacing.sm,
+  userMessageBubble: {
+    backgroundColor: theme.colors.primary,
+    borderTopRightRadius: 5,
+  },
+  botMessageBubble: {
+    backgroundColor: theme.colors.surface,
+    borderTopLeftRadius: 5,
+  },
+  senderName: {
+    fontWeight: 'bold',
+    marginBottom: theme.spacing.xs,
+    color: theme.colors.text.secondary,
+  },
+  userMessageText: {
+    fontSize: theme.fonts.sizes.md,
+    color: theme.colors.text.inverse,
+  },
+  botMessageText: {
+    fontSize: theme.fonts.sizes.md,
+    color: theme.colors.text.primary,
+  },
+  timestamp: {
+    fontSize: theme.fonts.sizes.xs,
+    color: theme.colors.text.secondary,
+    alignSelf: 'flex-end',
+    marginTop: theme.spacing.xs,
   },
 });

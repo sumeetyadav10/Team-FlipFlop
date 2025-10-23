@@ -1,8 +1,7 @@
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  avatar?: string;
+import { User as SupabaseUser } from '@supabase/supabase-js';
+
+export interface User extends SupabaseUser {
+  // You can add any app-specific user properties here
   teams: Team[];
 }
 
@@ -29,9 +28,10 @@ export interface TeamSettings {
 
 export interface Message {
   id: string;
-  type: 'user' | 'assistant';
+  user_id: string;
   content: string;
-  timestamp: Date;
+  created_at: string;
+  sender_name?: string;
   sources?: Source[];
   suggestions?: string[];
   isLoading?: boolean;
@@ -51,6 +51,7 @@ export interface Source {
 export interface QueryContext {
   teamId: string;
   conversationId?: string;
+  userId?: string;
   timeframe?: {
     start: Date;
     end: Date;
@@ -73,6 +74,17 @@ export interface CachedQuery {
   teamId: string;
 }
 
+export interface TimelineEvent {
+  id: string;
+  type: 'decision' | 'discussion' | 'milestone' | 'question';
+  title: string;
+  description: string;
+  timestamp: Date;
+  participants: string[];
+  sources: Source[];
+  relatedEvents?: string[];
+}
+
 export interface PendingQuery {
   id: string;
   question: string;
@@ -92,6 +104,12 @@ export interface LoginResponse {
 }
 
 // Navigation types
+export type AppStackParamList = {
+  Auth: undefined;
+  Main: undefined;
+  Chat: { teamId: string; teamName: string };
+};
+
 export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
@@ -104,7 +122,7 @@ export type AuthStackParamList = {
 };
 
 export type MainTabParamList = {
-  Chat: undefined;
+  Home: undefined;
   Search: undefined;
   Profile: undefined;
 };

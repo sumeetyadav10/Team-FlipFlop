@@ -1,10 +1,10 @@
 import { create } from 'zustand';
-import { Message, Source, QueryContext } from '../types';
+import { Message, Source } from '../types';
 import { apiClient } from '../api/client';
 
 interface ChatState {
   messages: Message[];
-  isLoading: boolean;
+  loading: boolean;
   isTyping: boolean;
   currentQuery: string;
   suggestions: string[];
@@ -12,89 +12,68 @@ interface ChatState {
   conversationId: string | null;
   
   // Actions
-  sendMessage: (text: string, teamId: string) => Promise<void>;
+  sendMessage: (text: string, teamId: string, userId: string) => Promise<void>;
+  fetchMessages: (teamId: string) => Promise<void>;
   setCurrentQuery: (query: string) => void;
-  addMessage: (message: Omit<Message, 'id' | 'timestamp'>) => void;
+  addMessage: (message: Omit<Message, 'id' | 'created_at'>) => void;
   clearChat: () => void;
   loadMoreMessages: (teamId: string) => Promise<void>;
   setCurrentTeam: (teamId: string) => void;
   provideFeedback: (messageId: string, feedback: { type: 'thumbs_up' | 'thumbs_down'; comment?: string }) => Promise<void>;
 }
 
-// Mock data for demonstration
-const mockSources: Source[] = [
-  {
-    id: 'src1',
-    type: 'slack',
-    title: 'Engineering Channel Discussion',
-    content: '@sarah: After comparing all options, I think Stripe is our best bet for payment processing. The API is well-documented and developer-friendly.',
-    url: 'https://slack.com/channels/engineering',
-    timestamp: new Date('2024-01-15T14:30:00'),
-    author: 'Sarah Johnson',
-    channel: '#engineering',
-  },
-  {
-    id: 'src2',
-    type: 'notion',
-    title: 'Payment Gateway Decision Log',
-    content: 'Payment Gateway Decision:\n• Selected: Stripe\n• Reasons: Developer-friendly API, excellent documentation, robust security\n• Alternatives considered: PayPal, Square',
-    url: 'https://notion.so/payment-gateway-decision',
-    timestamp: new Date('2024-01-15T15:45:00'),
-    author: 'Sarah Johnson',
-  },
-  {
-    id: 'src3',
-    type: 'email',
-    title: 'Re: Payment Integration Timeline',
-    content: 'Hi team, following up on our discussion about payment integration. Stripe integration should take approximately 2-3 weeks including testing.',
-    timestamp: new Date('2024-01-15T16:20:00'),
-    author: 'Mike Chen',
-  },
-];
-
-const mockSuggestions = [
-  "Show me the full conversation",
-  "Who else was involved in this decision?",
-  "What were the alternatives considered?",
-  "When was this decided?",
-  "Find related decisions",
-];
-
 export const useChatStore = create<ChatState>((set, get) => ({
-  messages: [
-    {
-      id: '1',
-      type: 'assistant',
-      content: '💭 What can I help you find?',
-      timestamp: new Date(),
-    },
-  ],
-  isLoading: false,
+  messages: [],
+  loading: false,
   isTyping: false,
   currentQuery: '',
-  suggestions: mockSuggestions,
+  suggestions: [],
   currentTeamId: null,
   conversationId: null,
 
-  sendMessage: async (text: string, teamId: string) => {
+  fetchMessages: async (teamId) => {
+    set({ loading: true });
+    try {
+      // This is a placeholder. In a real app, you'd fetch messages from your backend.
+      // For now, we'll just clear messages and add a welcome message.
+      set({
+        messages: [
+          {
+            id: '1',
+            user_id: 'system',
+            content: 'Welcome to the chat! Ask me anything.',
+            created_at: new Date().toISOString(),
+            sender_name: 'FlipFlop',
+          },
+        ],
+        loading: false,
+        currentTeamId: teamId,
+        conversationId: `conv_${teamId}_${Date.now()}` // Start a new conversation context
+      });
+    } catch (error) {
+      console.error("Failed to fetch messages:", error);
+      set({ loading: false });
+    }
+  },
+
+  sendMessage: async (text: string, teamId: string, userId: string) => {
     const userMessage: Message = {
       id: Date.now().toString(),
-      type: 'user',
+      user_id: userId,
       content: text,
-      timestamp: new Date(),
+      created_at: new Date().toISOString(),
     };
 
     // Add user message
     set(state => ({
       messages: [...state.messages, userMessage],
-      isLoading: true,
-      currentQuery: '',
+      loading: true,
     }));
 
     // Ensure a conversation ID exists
     let { conversationId } = get();
     if (!conversationId) {
-      conversationId = `conv_${Date.now()}`;
+      conversationId = `conv_${teamId}_${Date.now()}`;
       set({ conversationId });
     }
 
@@ -105,34 +84,37 @@ export const useChatStore = create<ChatState>((set, get) => ({
         context: {
           teamId,
           conversationId,
+          userId,
         },
       });
 
       const assistantMessage: Message = {
         id: response.messageId,
-        type: 'assistant',
+        user_id: 'assistant',
         content: response.answer,
-        timestamp: new Date(),
+        created_at: new Date().toISOString(),
         sources: response.sources,
         suggestions: response.suggestions,
+        sender_name: 'FlipFlop',
       };
 
       set(state => ({
         messages: [...state.messages, assistantMessage],
-        isLoading: false,
+        loading: false,
       }));
 
     } catch (error) {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        type: 'assistant',
+        user_id: 'system',
         content: 'Sorry, I encountered an error while processing your request. Please try again.',
-        timestamp: new Date(),
+        created_at: new Date().toISOString(),
+        sender_name: 'FlipFlop',
       };
 
       set(state => ({
         messages: [...state.messages, errorMessage],
-        isLoading: false,
+        loading: false,
       }));
     }
   },
@@ -145,7 +127,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const newMessage: Message = {
       ...message,
       id: Date.now().toString(),
-      timestamp: new Date(),
+      created_at: new Date().toISOString(),
     };
 
     set(state => ({
@@ -158,9 +140,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
       messages: [
         {
           id: '1',
-          type: 'assistant',
-          content: '💭 What can I help you find?',
-          timestamp: new Date(),
+          user_id: 'system',
+          content: 'Welcome back! How can I assist you?',
+          created_at: new Date().toISOString(),
+          sender_name: 'FlipFlop',
         },
       ],
       currentQuery: '',
@@ -169,33 +152,24 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   loadMoreMessages: async (teamId: string) => {
-    set({ isLoading: true });
+    set({ loading: true });
     
     try {
-      const olderMessages = await apiClient.getRecentQueries(teamId, 10);
+      // In a real app, you would fetch older messages from your backend
+      // For now, this is a placeholder.
+      console.log(`Loading more messages for team ${teamId}`);
       
-      set(state => {
-        // Merge and de-duplicate by message id while preserving order
-        const merged = [...olderMessages, ...state.messages];
-        const seen = new Set<string>();
-        const deduped = merged.filter(m => {
-          const key = m.id ?? `${m.type}-${m.timestamp?.toString()}`;
-          if (seen.has(key)) return false;
-          seen.add(key);
-          return true;
-        });
-        return {
-          messages: deduped,
-          isLoading: false,
-        };
-      });
+      set({ loading: false });
+
     } catch (error) {
-      set({ isLoading: false });
+      set({ loading: false });
     }
   },
 
   setCurrentTeam: (teamId: string) => {
-    set({ currentTeamId: teamId });
+    if (get().currentTeamId !== teamId) {
+      get().fetchMessages(teamId);
+    }
   },
 
   provideFeedback: async (messageId: string, feedback: { type: 'thumbs_up' | 'thumbs_down'; comment?: string }) => {
