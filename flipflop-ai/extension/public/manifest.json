@@ -1,0 +1,63 @@
+{
+  "manifest_version": 3,
+  "name": "FlipFlop Memory",
+  "version": "1.0.0",
+  "description": "Your team's AI memory layer - captures decisions from Google Meet and web pages",
+  
+  "permissions": [
+    "storage", 
+    "tabs",
+    "activeTab",
+    "identity"
+  ],
+  
+  "host_permissions": [
+    "https://meet.google.com/*",
+    "http://localhost:3000/*",
+    "https://*.flipflop.ai/*"
+  ],
+  
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAhPxPGg1lW3G8J6FdQ9mXogL7YY6l8KZM8JYN3mKGhk1sP3NHkMlB8LBqGZmVKH9G8kPDUKaXQ3wu9gLRRj/xGBbtXZlI6LSu0cJqr9vGxQ1SfWKWdyNYvHZFe9bfY8gR3CD+3HdKIJfnPZ2nqFYqUE3YgxQzJJt7SNTVhN5HikYGFuYQW1iu0e5XKJqY5qE7N9gL7Y1fR+5HSJoJ6bcnGqKH3oB1mLPl2V8RjLr7ObkHEZKGLPQNFTKUqJYrfAV3zPPQWFOyBWMhG1tF6s3IbYvxmZJpoqXSvKc7KzXn7A7YLhV80YOPAemFRBz9vc9p31Kz4yJ0kF7K0c7HYgZ5HwIDAQAB",
+  
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  
+  "content_scripts": [
+    {
+      "matches": ["https://meet.google.com/*"],
+      "js": ["content-meet.js"],
+      "run_at": "document_start",
+      "all_frames": false
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content-universal.js"],
+      "exclude_matches": ["https://meet.google.com/*"],
+      "run_at": "document_idle"
+    }
+  ],
+  
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  
+  "web_accessible_resources": [
+    {
+      "resources": ["icons/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "name": "flipflop-extension",
+  "version": "1.0.0",
+  "description": "FlipFlop Browser Extension for Google Meet transcription",
+  "scripts": {
+    "dev": "webpack --watch --mode development",
+    "build": "webpack --mode production",
+    "build:dev": "webpack --mode development",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "axios": "^1.6.2"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.254",
+    "@types/node": "^20.10.5",
+    "copy-webpack-plugin": "^11.0.0",
+    "css-loader": "^6.8.1",
+    "style-loader": "^3.3.3",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.3.3",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4"
+  }
+}

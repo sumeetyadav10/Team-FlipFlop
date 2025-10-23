@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Login View -->
+    <div id="login-view" class="view">
+      <div class="header">
+        <img src="../icons/icon-48.png" alt="FlipFlop" />
+        <h2>FlipFlop Memory</h2>
+      </div>
+      
+      <!-- Google OAuth Login -->
+      <button id="google-login" class="button google-button">
+        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHZpZXdCb3g9IjAgMCAxOCAxOCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTE2LjUxIDkuMTYzNjRIMTUuNzVWOS4wOTA5MUg5VjEwLjkwOTFIMTMuMzNDMTIuNzUgMTIuNzY4MiAxMS4wNyAxNC4xODE4IDkgMTQuMTgxOEM2LjM4IDE0LjE4MTggNC4xOCA2LjM4IDQuMTggOVM2LjM4IDMuODE4MTggOSAzLjgxODE4QzEwLjI1IDMuODE4MTggMTEuNCA0LjMgMTIuMjUgNS4wOUwxMy41NyAzLjc3QzEyLjM1IDIuNjMgMTAuNzUgMS45MDkwOSA5IDEuOTA5MDlDNS4xNiAxLjkwOTA5IDIuMDkgNC45OCAyLjA5IDkuMDA5MDlDMi4wOSAxMy4wMjkxIDUuMTYgMTYuMDkwOSA5IDE2LjA5MDlDMTIuODQgMTYuMDkwOSAxNS45MSAxMy4wMjkxIDE1LjkxIDkuMDA5MDlDMTUuOTEgOC43MyAxNS44NyA4LjQ2IDE1LjggOC4yVjguMThINS45MVY5LjE2MzY0SDE2LjUxWiIgZmlsbD0iIzQyODVGNCIvPgo8L3N2Zz4K" alt="Google" />
+        Continue with Google
+      </button>
+      
+      <div class="divider">
+        <span>or</span>
+      </div>
+      
+      <form id="login-form">
+        <input type="email" id="email" placeholder="Email" required />
+        <input type="password" id="password" placeholder="Password" required />
+        <button type="submit" class="button primary">Sign In</button>
+      </form>
+      
+      <div class="footer">
+        <a href="#" id="signup-link">Don't have an account?</a>
+      </div>
+    </div>
+
+    <!-- Main View -->
+    <div id="main-view" class="view" style="display: none;">
+      <div class="header">
+        <img src="../icons/icon-48.png" alt="FlipFlop" />
+        <div class="header-info">
+          <h3>FlipFlop Memory</h3>
+          <span id="user-email" class="subtitle"></span>
+        </div>
+      </div>
+
+      <div class="status-card">
+        <div class="status-indicator connected">
+          <span class="dot"></span>
+          <span>Connected</span>
+        </div>
+        <div class="team-selector">
+          <label>Team:</label>
+          <select id="team-select"></select>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="action-item" id="capture-btn">
+          <span class="icon">📷</span>
+          <span>Quick Capture</span>
+        </button>
+        <button class="action-item" id="meet-btn">
+          <span class="icon">🎥</span>
+          <span>Google Meet</span>
+        </button>
+      </div>
+
+      <div class="stats">
+        <h4>Recent Activity</h4>
+        <div id="stats-content">
+          <p class="loading">Loading...</p>
+        </div>
+      </div>
+
+      <div class="footer">
+        <button id="settings-btn" class="text-button">Settings</button>
+        <button id="logout-btn" class="text-button">Sign Out</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
