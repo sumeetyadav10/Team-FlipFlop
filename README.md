@@ -1,10 +1,12 @@
 # Team FlipFlop
 
-Test README for Team FlipFlop project.
+## 3. The AI That Thinks With You
 
-## Project Overview
+### Problem:
+Modern teams are overwhelmed by information spread across emails, chats, and meetings. While tools exist to manage tasks, none truly understand the "why" behind decisions or retain long-term context. As a result, teams lose continuity, repeat work, and struggle to recall past decisions or reasoning reducing overall efficiency and innovation.
 
-This is the main repository for Team FlipFlop's collaborative work.
+### What can be done:
+Create an AI powered cognitive workspace that continuously learns from user interactions, summarizing discussions, identifying decisions, and suggesting contextual next steps. It would act as a shared memory layer for teams integrating with tools like Slack, Notion, or Google Workspace enabling AI-assisted recall, smart summaries, and decision tracking. Over time, Synapse could predict workflow bottlenecks and recommend improvements based on behavioral data.
 
 ## Setup
 
