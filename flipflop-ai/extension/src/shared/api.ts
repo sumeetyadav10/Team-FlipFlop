@@ -129,35 +129,69 @@ class API {
   }
 
   async sendTranscript(chunk: TranscriptChunk, meetingId: string): Promise<void> {
-    const { sessionToken, selectedTeamId } = await this.getStorageData();
-    if (!sessionToken || !selectedTeamId) {
-      throw new Error('Not authenticated');
-    }
+    // Direct Supabase save for development - bypassing backend
+    try {
+      const { selectedTeamId, user } = await this.getStorageData();
+      
+      if (!selectedTeamId || !user) {
+        console.log('[API] Using hardcoded team/user for development');
+      }
 
-    const response = await fetch(`${this.apiUrl}/extension/meet/transcription`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Extension-Key': this.extensionKey,
-        'X-Session-Token': sessionToken,
-        'X-Team-ID': selectedTeamId,
-      },
-      body: JSON.stringify({ meetingId, chunk }),
-    });
+      const supabaseUrl = 'https://yyirmzmkwfobtczvuwxc.supabase.co';
+      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5aXJtem1rd2ZvYnRjenZ1d3hjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjExOTYyNDMsImV4cCI6MjA3Njc3MjI0M30.40MvWUdOMHwBKHbOtbINdhgpKE1_44iC5gvX7dOB22o';
+      
+      const memoryData = {
+        team_id: selectedTeamId || 'c1864b73-1eb5-49c1-bb2a-13ea1066a94b', // fallback team
+        user_id: user?.id || 'c1864b73-1eb5-49c1-bb2a-13ea1066a94b', // fallback user
+        content: chunk.text,
+        type: 'meeting',
+        source: 'google_meet',
+        metadata: {
+          meetingId,
+          timestamp: chunk.timestamp,
+          speaker: chunk.speaker || 'Speaker'
+        },
+        created_at: new Date().toISOString()
+      };
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`API Error: ${response.status} - ${error}`);
+      console.log('[API] Saving directly to Supabase:', memoryData);
+
+      const response = await fetch(`${supabaseUrl}/rest/v1/memories`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify(memoryData)
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        console.error('[API] Supabase error:', error);
+        throw new Error(`Supabase Error: ${response.status} - ${error}`);
+      }
+
+      console.log('[API] ✅ Saved directly to Supabase!');
+    } catch (error) {
+      console.error('[API] Direct Supabase save failed:', error);
+      throw error;
     }
   }
 
   async endMeeting(meetingId: string, summary?: string, decisions?: string[], actionItems?: string[]): Promise<void> {
     const { sessionToken, selectedTeamId } = await this.getStorageData();
+    console.log('[API] End meeting - storage data:', { sessionToken: !!sessionToken, selectedTeamId });
+    
     if (!sessionToken || !selectedTeamId) {
       throw new Error('Not authenticated');
     }
 
-    await fetch(`${this.apiUrl}/extension/meet/end`, {
+    const url = `${this.apiUrl}/extension/meet/end`;
+    console.log('[API] Ending meeting at:', url);
+    
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -172,6 +206,13 @@ class API {
         actionItems,
       }),
     });
+
+    console.log('[API] End meeting response status:', response.status);
+    
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`API Error: ${response.status} - ${error}`);
+    }
   }
 
   async captureContent(data: CaptureData): Promise<void> {

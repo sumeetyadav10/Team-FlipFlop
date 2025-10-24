@@ -8,11 +8,27 @@ chrome.runtime.onInstalled.addListener(() => {
 
 // Handle messages from content scripts and popup
 chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) => {
-  handleMessage(message, sender).then(sendResponse);
+  console.log('[Background] Message listener triggered');
+  handleMessage(message, sender)
+    .then(response => {
+      console.log('[Background] Sending response:', response);
+      sendResponse(response);
+    })
+    .catch(error => {
+      console.error('[Background] Error handling message:', error);
+      sendResponse({ success: false, error: error.message });
+    });
   return true; // Keep message channel open for async response
 });
 
 async function handleMessage(message: Message, sender: chrome.runtime.MessageSender) {
+  console.log('[Background] Received message:', message.type, message);
+  
+  // Quick ping response to test if background is alive
+  if (message.type === 'WAKE_UP' || message.type === 'PING') {
+    return { alive: true, timestamp: Date.now() };
+  }
+  
   switch (message.type) {
     case 'GET_STATUS':
       const isAuthenticated = await api.verifySession();
@@ -56,14 +72,17 @@ async function handleMessage(message: Message, sender: chrome.runtime.MessageSen
 
     case 'SEND_TRANSCRIPT':
       // Send transcript to backend
+      console.log('[Background] Received SEND_TRANSCRIPT:', message);
       try {
         if (!message.chunk || !message.meetingId) {
           throw new Error('Missing chunk or meetingId');
         }
+        console.log('[Background] Sending to API...');
         await api.sendTranscript(message.chunk, message.meetingId);
+        console.log('[Background] Transcript sent successfully');
         return { success: true };
       } catch (error) {
-        console.error('Failed to send transcript:', error);
+        console.error('[Background] Failed to send transcript:', error);
         return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
       }
 

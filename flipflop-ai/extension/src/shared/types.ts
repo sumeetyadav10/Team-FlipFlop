@@ -50,7 +50,9 @@ export type MessageType =
   | 'AUTH_UPDATED'
   | 'VERIFY_SESSION'
   | 'SEND_TRANSCRIPT'
-  | 'END_MEETING';
+  | 'END_MEETING'
+  | 'WAKE_UP'
+  | 'PING';
 
 export interface Message {
   type: MessageType;

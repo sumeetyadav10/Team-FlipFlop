@@ -2,7 +2,8 @@ const path = require('path');
 const CopyPlugin = require('copy-webpack-plugin');
 
 module.exports = {
-  devtool: process.env.NODE_ENV === 'production' ? false : 'inline-source-map',
+  mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
+  devtool: process.env.NODE_ENV === 'production' ? 'source-map' : 'inline-source-map',
   entry: {
     background: './src/background/service-worker.ts',
     'content-meet': './src/content/meet-final.ts',
